@@ -8,3 +8,8 @@ retail_raw <- read_csv(
     RSAFSNA = col_double()
   )
 )
+retail_raw_long <- retail_raw |>
+  select(observation_date, RSAFS, RSAFSNA) |>
+  pivot_longer(cols = c(RSAFS, RSAFSNA), names_to = "series_id", values_to = "sales")
+head(retail_raw_long)
+head(retail_raw)
