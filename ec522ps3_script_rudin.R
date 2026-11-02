@@ -161,5 +161,25 @@ retail_ts |>
     y = "Millions of dollars"
   ) +
   theme_minimal()
+retail_ts |>
+  filter(series_id == "RSAFS") |>
+  gg_season(sales) +
+  labs(
+    title = "Seasonal Pattern in SA Retail Sales",
+    y = "Millions of dollars"
+  ) +
+  theme_minimal()
+#In the NSA series, there is a repeating shape between each line/seasonal period. In the SA series, the lines all have their own shapes with no clear repeating trends.
+can_gas |>
+  gg_season(log_volume) +
+  labs(
+    title = "Canadian Gas Production: Seasonal Plot (log scale)",
+    x = NULL, y = "log(volume)"
+  ) +
+  theme_minimal()
+#The seasonal pattern I am seeing is a higher level of production in Jan-March, a dip from March-Sept, and then a growth until Dec. This matches my intuition about natural gas production, as gas is used for heating in the cooler months.
+
+
+
 
 
