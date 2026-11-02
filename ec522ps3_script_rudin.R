@@ -246,8 +246,23 @@ gas_cv_fc <- can_gas |>
 gas_cv_fc |>
   accuracy(can_gas, measures = list(MAE = MAE, RMSE = RMSE))
 
+#The first forecast evaluated is 1980 Jan, and the last is 2005 feb. 
+#SNAIVE - MAE is 0.563, RMSE is 0.702. TSLM - MAE is 4.01, RMSE is 4.36. The SNAIVE model forecasts more accurately, with the two metrics agreeing.
+gas_cv_fc |>
+  accuracy(can_gas, measures = list(MAE = MAE, RMSE = RMSE)) |>
+  select(.model, MAE, RMSE) |>
+  knitr::kable(digits = 3)
+errs <- gas_cv_fc |>
+  as_tibble() |>
+  left_join(as_tibble(can_gas) |> select(Month, actual = Volume),
+            by = "Month") |>
+  mutate(e = actual - .mean) |>
+  select(Month, .model, e) |>
+  pivot_wider(names_from = .model, values_from = e) |>
+  na.omit()
 
-
+forecast::dm.test(errs$snaive, errs$tslm, h = 1, power = 1)
+#DM stat - -31.278, p-val - <2.2e-16 (essentially 0). From the DM test, the H0 is that both models forecast equally accurately. At the 5% level, we reject H0. Since the DM test stat is negative, we can say that the SNAIVE (first model) has smaller errors than the second (TSLM).
 
 
 
