@@ -178,8 +178,18 @@ can_gas |>
   ) +
   theme_minimal()
 #The seasonal pattern I am seeing is a higher level of production in Jan-March, a dip from March-Sept, and then a growth until Dec. This matches my intuition about natural gas production, as gas is used for heating in the cooler months.
+can_gas |>
+  gg_subseries(log_volume) +
+  labs(
+    title = "Subseries Plot: Canadian Gas Production",
+    y = "log(Volume)"
+  )
+retail_nsa_x13 <- retail_ts |>
+  filter(series_id == "RSAFSNA") |>
+  model(x13 = X_13ARIMA_SEATS(sales)) |>
+  components()
 
-
-
+retail_nsa_x13 |> autoplot()
+#The seasonal factor is the highest in December 1990s, with sales being about 20% above trend (factor of about 1.2 in Dec early 1990s). The size of the seasonal swings appears to shrink over time, with Dec being about 1.1. 
 
 
