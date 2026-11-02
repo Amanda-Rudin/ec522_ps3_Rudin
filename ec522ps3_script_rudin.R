@@ -229,9 +229,22 @@ can_gas_fit |>
   labs(title = "Linear Trend + Seasonal Dummies Fit: Canadian Gas Production",
        y = "log(Volume)", color = NULL) +
   theme_minimal()
+#The fitted line tracks the actual series moderately okay. It does well from 1964-1970,  and 1981-2000. It visibly misses from 1960-1964 (over predicts), 1970-1980 (under predicts), and 2000 on (over predicts).
+can_gas_fit |> gg_tsresiduals()
+can_gas_fit |>
+  augment() |>
+  features(.innov, ljung_box, lag = 24)
+#These residuals, according to the ACF, do not look like white noise.There is a visible trend left in these residuals. Each lag is far above the blue bands, and decays very slowly. White noise would be random, uncorrelated spikes. 
+#At the 5% level, we reject the H0 of the Ljung Box test. The lb_pvalue is 0, so we reject Ho at the 5% level.
+gas_cv_fc <- can_gas |>
+  select(Month, Volume) |>
+  stretch_tsibble(.init = 240, .step = 1) |>
+  model(snaive = SNAIVE(Volume),
+        tslm   = TSLM(log(Volume) ~ trend() + season())) |>
+  forecast(h = 1)
 
-
-
+gas_cv_fc |>
+  accuracy(can_gas, measures = list(MAE = MAE, RMSE = RMSE))
 
 
 
