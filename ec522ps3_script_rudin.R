@@ -191,5 +191,53 @@ retail_nsa_x13 <- retail_ts |>
 
 retail_nsa_x13 |> autoplot()
 #The seasonal factor is the highest in December 1990s, with sales being about 20% above trend (factor of about 1.2 in Dec early 1990s). The size of the seasonal swings appears to shrink over time, with Dec being about 1.1. 
+sa_compare <- retail_nsa_x13 |>
+  as_tibble() |>
+  select(Month, mine = season_adjust) |>
+  left_join(
+    retail_ts |>
+      filter(series_id == "RSAFS") |>
+      as_tibble() |>
+      transmute(Month, census = sales),
+    by = "Month"
+  ) |>
+  mutate(pct_diff = 100 * (log(mine) - log(census)))
+
+sa_compare |>
+  ggplot(aes(x = Month, y = pct_diff)) +
+  geom_line() +
+  labs(
+    title = "My X-13 Seasonal Adjustment Minus the Census Bureau's",
+    x = NULL, y = "Difference (%)"
+  ) +
+  theme_minimal()
+#My series matches the official adjustment quite closely, being around 0.5% off. The adjustments differ the most during covid times (2020-2023 ish). During covid times, the difference is around 1.5%.
+can_gas_fit <- can_gas |>
+  model(TSLM(log_volume ~ trend() + season()))
+
+report(can_gas_fit)
+can_gas_fit |>
+  tidy() |>
+  select(term, estimate, std.error, statistic, p.value) |>
+  knitr::kable(digits = 3)
+#The average monthly growth rate is about 0.4% per month (0.003973 x 100). The most significant season effect is June (season 6), with the absolute value of the |t-stat| being 4.777.
+can_gas_fit |>
+  augment() |>
+  ggplot(aes(x = Month)) +
+  geom_line(aes(y = log_volume, color = "Actual")) +
+  geom_line(aes(y = .fitted, color = "Fitted")) +
+  labs(title = "Linear Trend + Seasonal Dummies Fit: Canadian Gas Production",
+       y = "log(Volume)", color = NULL) +
+  theme_minimal()
+
+
+
+
+
+
+
+
+
+
 
 
