@@ -244,7 +244,9 @@ gas_cv_fc <- can_gas |>
   forecast(h = 1)
 
 gas_cv_fc |>
-  accuracy(can_gas, measures = list(MAE = MAE, RMSE = RMSE))
+  accuracy(can_gas, measures = list(MAE = MAE, RMSE = RMSE)) |>
+  select(.model, MAE, RMSE) |>
+  knitr::kable(digits = 3)
 
 #The first forecast evaluated is 1980 Jan, and the last is 2005 feb. 
 #SNAIVE - MAE is 0.563, RMSE is 0.702. TSLM - MAE is 4.01, RMSE is 4.36. The SNAIVE model forecasts more accurately, with the two metrics agreeing.
@@ -262,7 +264,19 @@ errs <- gas_cv_fc |>
   na.omit()
 
 forecast::dm.test(errs$snaive, errs$tslm, h = 1, power = 1)
-#DM stat - -31.278, p-val - <2.2e-16 (essentially 0). From the DM test, the H0 is that both models forecast equally accurately. At the 5% level, we reject H0. Since the DM test stat is negative, we can say that the SNAIVE (first model) has smaller errors than the second (TSLM).
+#DM stat - -31.278, p-val - <2.2e-16 (essentially 0). From the DM test, the H0 is that both models forecast equally accurately. At the 5% level, we reject H0. Since the DM test stat is negative, we can say that the SNAIVE (first model) has smaller absolute errors than the second (TSLM).
+gas_roll_fc <- can_gas |>
+  select(Month, Volume) |>
+  slide_tsibble(.size = 240, .step = 1) |>
+  model(snaive = SNAIVE(Volume),
+        tslm   = TSLM(log(Volume) ~ trend() + season())) |>
+  forecast(h = 1)
+
+gas_roll_fc |>
+  accuracy(can_gas, measures = list(MAE = MAE, RMSE = RMSE)) |>
+  select(.model, MAE, RMSE) |>
+  knitr::kable(digits = 3)
+#SNAIVE - MAE is 0.562, RMSE is 0.702. TSLM - MAE is 2.095, RMSE is 2.425. The TSLM's accuracy changed more than SNAIVE's. SNAIVE didn't change much because it uses the same value just 12 months prior, whereas TSLM is more complicated than that and estimates its trend from the training window (so a changing window changes the forecast). As seen in 4.4b, the linear trend missed in different periods because growth rate changed over time (slwoed), the rolling window drops the fast growing early years, so the trend better matches recent growth.
 
 
 
