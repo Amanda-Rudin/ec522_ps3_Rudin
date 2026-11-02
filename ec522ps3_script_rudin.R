@@ -23,3 +23,8 @@ retail_ts <- retail_raw_long |>
 head(retail_ts)
 has_gaps(retail_ts)
 head(canadian_gas)
+key_vars(canadian_gas)
+index_var(canadian_gas)
+can_gas<- canadian_gas |>
+  select(Month, Volume)
+has_gaps(can_gas)
