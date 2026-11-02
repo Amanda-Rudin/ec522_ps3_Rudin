@@ -67,11 +67,99 @@ retail_ts |>
 can_gas |> 
   autoplot(Volume) +
   labs(
-    title = "Canadian Gas Consumption",
+    title = "Canadian Gas Production",
     subtitle = "Monthly data from 1960 to 2004",
     x = NULL, y = "Millions of cubic metres", color = NULL
   ) +
   theme_minimal()
+retail_ts |>
+  autoplot(sales) +
+  scale_y_continuous(
+    labels = scales::dollar_format(scale = 1e-6, suffix = "M")
+  )+
+  labs(
+    title = "U.S. Retail and Food Services Sales",
+    subtitle = "Seasonally adjusted vs. not seasonally adjusted",
+    x = NULL, y = "Millions of dollars", color = NULL
+  ) +
+  theme_minimal()
+#I added scale_y_continuous to make the Y axis in dollar format. I also added a suffix of M to show that the values are in the millions. Both of these make the Y axis more readable.
+#The size of the swings changes over time, but doesn't necesarily always grow as the lvel grows. From 1970 to 1990, the swings grow, but they get smaller again post 1990.
+can_gas <- can_gas |>
+  mutate(log_volume = log(Volume))
+can_gas |> 
+  autoplot(log_volume) +
+  labs(
+    title = "Canadian Gas Production",
+    subtitle = "Monthly data",
+    x = NULL, y = "Log of Millions of cubic metres", color = NULL
+  ) +
+  theme_minimal()
+#The logged series swings are smaller than the original series, making the series smoother. Also, the logged series looks like steep growth, with a slowing of growth towards the end. The original series looks like steep growth, then slower growth, then steep again.
+#I think logs are not a good idea for can_gas. On the logged graph. the swings still grow and shrink in size (being very large for the first few years, large again from 1980-1990 ish, and smaller post-2000). Due to this, I'm assuming seasonality isn't proportional to the level - so logging the series is not a perfect fix.
+retail_nsa <- retail_ts |>
+  filter(series_id == "RSAFSNA") |>
+  mutate(log_sales = log(sales))
+retail_nsa |>
+  autoplot(sales) +
+  scale_y_continuous(
+    labels = scales::dollar_format(scale = 1e-6, suffix = "M")
+  )+
+  labs(
+    title = "U.S. Retail and Food Services Sales",
+    x = NULL, y = "Sales (Millions of dollars)"
+    ) +
+  theme_minimal()
+retail_nsa |>
+  autoplot(log_sales) +
+  labs(
+    title = "U.S. Retail and Food Services Sales (NSA, log scale)",
+    x = NULL, y = "log(Sales)"
+  ) +
+  theme_minimal()
+#The case for logging this series is stronger than it was for can_gas. The non-logged series' swings grow over time, where the swings in the logged series stay the same size over time.
+can_gas <- can_gas |>
+  mutate(
+    growth_direct = 100 * difference(Volume) / lag(Volume),
+    growth_logdiff = 100 * difference(log_volume)
+  )
+can_gas |>
+  autoplot(growth_direct) +
+  labs(
+    title = "Canadian Gas Production Growth Direct",
+    x = NULL, y = "% change from prev month"
+  ) +
+  theme_minimal()
+can_gas <- can_gas |>
+  mutate(growth_gap = abs(growth_direct - growth_logdiff))
+can_gas |>
+  autoplot(growth_gap) +
+  labs(
+    title = "Gap Btwn Direct and Log-Diff Growth Rates",
+    x = NULL, y = "Absolute difference in % points"
+  )+
+  theme_minimal()
+#I think the log-diff approx is fairly good in this case, as the largest abs diff in % points is only just over 3 percentage points.
+retail_ts <- retail_ts |>
+  group_by_key() |>
+  mutate(growth_mom = 100 * difference(log(sales))) |>
+  ungroup()
 
+retail_ts |>
+  autoplot(growth_mom) +
+  labs(
+    title = "Month-over-Month Growth: SA vs. NSA Retail Sales",
+    x = NULL, y = "Growth rate (%)", color = NULL
+  ) +
+  theme_minimal()
+#The month-over month growth rate of the SA series is much smaller than the NSA series. The SA series also shows times of greater growth and negative growth, while these trends are much harder to see in the NSA series. To connect back, the NSA series shows the spikes and dips within each year, while the SA series only shows actual growth trends, not seasonality. The NSA series is much noisier, because seasonal trends still exist.
+retail_ts |>
+  filter(series_id == "RSAFSNA") |>
+  gg_season(sales) +
+  labs(
+    title = "Seasonal Pattern in NSA Retail Sales",
+    y = "Millions of dollars"
+  ) +
+  theme_minimal()
 
 
